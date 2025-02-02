@@ -58,26 +58,13 @@
             margin-top: 1rem;
             text-align: left;
         }
-        .separator {
-            border-top: 2px solid #fff;
-            margin: 20px 0;
-        }
-        .spacer {
-            margin-bottom: 20px;
-        }
-        .button-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
     </style>
 </head>
 <body>
     <div id="analysis_container">
         <h1>Analýza zápasů</h1>
         <textarea id="textInput" placeholder="Vložte text zápasů zde..."></textarea>
-        <div class="button-container">
+        <div>
             <button onclick="analyzeMatches()">Analyzovat</button>
             <button onclick="copyToClipboard()">Kopírovat</button>
             <button onclick="clearOutput()">Odstranit</button>
@@ -86,62 +73,58 @@
     </div>
 
     <script>
-        let lastOutput = ''; // Uloží poslední výstup pro kopírování
-
         function analyzeMatches() {
             const text = document.getElementById('textInput').value;
-
-            // Najdi analyzovaný tým
-            const teamMatch = text.match(/Analyzovaný tým\/hráč: Last matches: ([^\n]+)/);
+            const teamMatch = text.match(/Poslední zápasy: ([^\n]+)/);
             if (!teamMatch) {
                 alert("Analyzovaný tým nebyl nalezen.");
                 return;
             }
             const team = teamMatch[1].trim();
-
-            // Vytvoř regex pro zápasy analyzovaného týmu
-            const regex = new RegExp(`(${team}) vs [^:]+: (\\d+)-(\\d+) - [^\n]+|[^:]+ vs (${team}): (\\d+)-(\\d+) - [^\n]+`, 'g');
             
-            let totalGoalsConceded = 0;
+            const regex = new RegExp(`([^:]+) vs ([^:]+): (\\d+)-(\\d+) - (\\w+)`, 'g');
+            
             let totalGoalsScored = 0;
+            let totalGoalsConceded = 0;
             let totalMatches = 0;
-            let wins = 0;
-            let losses = 0;
-            let draws = 0;
+            let wins = 0, losses = 0, draws = 0;
             let matches = [];
             let match;
-            
+
             while (match = regex.exec(text)) {
-                totalMatches++;
-                let matchDetails;
-                if (match[1] === team) {
-                    // tým vs X
-                    const teamScore = parseInt(match[2]);
-                    const opponentScore = parseInt(match[3]);
-                    totalGoalsScored += teamScore;
-                    totalGoalsConceded += opponentScore;
-                    if (teamScore > opponentScore) wins++;
-                    else if (teamScore < opponentScore) losses++;
-                    else draws++;
-                    matchDetails = `${match[0]}`;
-                } else if (match[4] === team) {
-                    // X vs tým
-                    const opponentScore = parseInt(match[5]);
-                    const teamScore = parseInt(match[6]);
-                    totalGoalsScored += teamScore;
-                    totalGoalsConceded += opponentScore;
-                    if (teamScore > opponentScore) wins++;
-                    else if (teamScore < opponentScore) losses++;
-                    else draws++;
-                    matchDetails = `${match[0]}`;
+                const team1 = match[1].trim();
+                const team2 = match[2].trim();
+                const score1 = parseInt(match[3]);
+                const score2 = parseInt(match[4]);
+                const result = match[5];
+                
+                if (team1 === team) {
+                    totalGoalsScored += score1;
+                    totalGoalsConceded += score2;
+                } else if (team2 === team) {
+                    totalGoalsScored += score2;
+                    totalGoalsConceded += score1;
+                } else {
+                    continue;
                 }
-                matches.push(matchDetails.trim());
+                
+                totalMatches++;
+                if (result === "Výhra") wins++;
+                else if (result === "Prohra") losses++;
+                else draws++;
+
+                matches.push(`${team1} vs ${team2}: ${score1}-${score2} - ${result}`);
+            }
+            
+            if (totalMatches === 0) {
+                alert("Nebyl nalezen žádný zápas týmu.");
+                return;
             }
 
-            const avgGoalsConceded = totalMatches > 0 ? (totalGoalsConceded / totalMatches).toFixed(2) : 'NaN';
-            const avgGoalsScored = totalMatches > 0 ? (totalGoalsScored / totalMatches).toFixed(2) : 'NaN';
+            const avgGoalsScored = (totalGoalsScored / totalMatches).toFixed(2);
+            const avgGoalsConceded = (totalGoalsConceded / totalMatches).toFixed(2);
 
-            const resultText = `
+            document.getElementById('result').innerHTML = `
 Analyzovaný tým/hráč: ${team}
 
 Celkem zápasů: ${totalMatches}
@@ -153,34 +136,24 @@ Celkový počet inkasovaných gólů: ${totalGoalsConceded}
 Průměrné vstřelené góly za zápas: ${avgGoalsScored}
 Průměrné inkasované góly za zápas: ${avgGoalsConceded}
 
-<hr class="separator">
-
 Seznam zápasů:
-${matches.join('\n')}
-            `;
-
-            lastOutput = resultText;
-            document.getElementById('result').innerHTML = `<pre>${resultText}</pre>`;
+${matches.join('\n')}`;
         }
 
         function copyToClipboard() {
-            if (lastOutput) {
-                const tempTextArea = document.createElement('textarea');
-                tempTextArea.value = lastOutput;
-                document.body.appendChild(tempTextArea);
-                tempTextArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempTextArea);
-                alert('Výstup byl zkopírován do schránky!');
-            } else {
-                alert('Nejprve zobrazte výsledky, abyste je mohli zkopírovat.');
+            const resultText = document.getElementById('result').innerText;
+            if (!resultText) {
+                alert("Nejprve zobrazte výsledky, abyste je mohli zkopírovat.");
+                return;
             }
+            navigator.clipboard.writeText(resultText).then(() => {
+                alert("Výstup byl zkopírován do schránky!");
+            });
         }
 
         function clearOutput() {
             document.getElementById('textInput').value = '';
             document.getElementById('result').innerHTML = '';
-            lastOutput = '';
         }
     </script>
 </body>
