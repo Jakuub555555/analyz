@@ -75,7 +75,7 @@
     <script>
         function analyzeMatches() {
             const text = document.getElementById('textInput').value;
-            const teamMatch = text.match(/Poslední zápasy: ([^\n]+)/);
+            const teamMatch = text.match(/Analyzovaný tým\/hráč: Poslední zápasy: ([^\n]+)/);
             if (!teamMatch) {
                 alert("Analyzovaný tým nebyl nalezen.");
                 return;
