@@ -1,169 +1,170 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analýza zápasů</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #111;
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        #analysis_container {
-            width: 100%;
-            max-width: 800px;
-            background: #222;
-            border-radius: 10px;
-            padding: 2rem;
-            box-shadow: 0px 0px 20px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-        textarea {
-            width: calc(100% - 20px);
-            height: 300px;
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            background: #333;
-            color: #fff;
-            resize: none;
-        }
-        button {
-            margin: 5px;
-            padding: 10px 20px;
-            font-size: 14px;
-            cursor: pointer;
-            background: #444;
-            border: none;
-            border-radius: 6px;
-            color: #fff;
-        }
-        button:hover {
-            background: #555;
-        }
-        #result {
-            border: none;
-            padding: 10px;
-            background: transparent;
-            color: #fff;
-            white-space: pre-wrap;
-            margin-top: 1rem;
-            text-align: left;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analýza zápasů</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    #analysis_container {
+      background: #222;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+    }
+    textarea {
+      width: calc(100% - 20px);
+      height: 300px;
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #333;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      resize: none;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #555;
+    }
+    #result {
+      margin-top: 1rem;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+  </style>
 </head>
 <body>
-    <div id="analysis_container">
-        <h1>Analýza zápasů</h1>
-        <textarea id="textInput" placeholder="Vložte text zápasů zde..."></textarea>
-        <div>
-            <button onclick="analyzeMatches()">Analyzovat</button>
-            <button onclick="copyToClipboard()">Kopírovat</button>
-            <button onclick="clearOutput()">Odstranit</button>
-        </div>
-        <div id="result"></div>
+  <div id="analysis_container">
+    <h1>Analýza zápasů</h1>
+    <textarea id="textInput" placeholder="Vložte text zápasů zde..."></textarea>
+    <div>
+      <button onclick="analyzeMatches()">Analyzovat</button>
+      <button onclick="copyToClipboard()">Kopírovat</button>
+      <button onclick="clearOutput()">Odstranit</button>
     </div>
+    <div id="result"></div>
+  </div>
 
-    <script>
-        function analyzeMatches() {
-            const text = document.getElementById('textInput').value;
+  <script>
+    function analyzeMatches() {
+      const text = document.getElementById('textInput').value;
 
-            // Hledáme analyzovaný tým z formátu "Analyzovaný tým/hráč: Last matches: Mejia N."
-            const teamMatch = text.match(/Analyzovaný tým\/hráč: Last matches: ([^\n]+)/);
-            if (!teamMatch) {
-                alert("Analyzovaný tým nebyl nalezen.");
-                return;
-            }
-            const team = teamMatch[1].trim();  // Tým (např. "Mejia N.")
-            
-            // Regulární výraz pro zápasy
-            // Tento výraz teď bude odpovídat formátu: "Mejia N. vs Hernandez A.: 2-0 - Výhra"
-            const regex = new RegExp(`([A-Za-z ]+) vs ([A-Za-z ]+): (\\d+)-(\\d+) - (Výhra|Prohra|Remíza)`, 'g');
-            
-            let totalGoalsScored = 0;
-            let totalGoalsConceded = 0;
-            let totalMatches = 0;
-            let wins = 0, losses = 0, draws = 0;
-            let matches = [];
-            let match;
+      // Najdi jméno hráče/týmu
+      const teamMatch = text.match(/Analyzovaný tým\/hráč:\s*Last matches:\s*(.+)/);
+      if (!teamMatch) {
+        alert("Analyzovaný tým nebyl nalezen.");
+        return;
+      }
+      const team = teamMatch[1].trim();
 
-            // Projít text a hledat zápasy
-            while (match = regex.exec(text)) {
-                const team1 = match[1].trim();
-                const team2 = match[2].trim();
-                const score1 = parseInt(match[3]);
-                const score2 = parseInt(match[4]);
-                const result = match[5];
+      // Najdi všechny zápasy
+      const lines = text.split('\n');
+      const matchRegex = /^(.+?) vs (.+?): (\d+)-(\d+) - (Výhra|Prohra|Remíza)$/;
 
-                // Pokud zápas patří do analyzovaného týmu
-                if (team1 === team) {
-                    totalGoalsScored += score1;
-                    totalGoalsConceded += score2;
-                } else if (team2 === team) {
-                    totalGoalsScored += score2;
-                    totalGoalsConceded += score1;
-                } else {
-                    continue;
-                }
-                
-                totalMatches++;
-                if (result === "Výhra") wins++;
-                else if (result === "Prohra") losses++;
-                else if (result === "Remíza") draws++;
+      let totalMatches = 0;
+      let wins = 0, losses = 0, draws = 0;
+      let scored = 0, conceded = 0;
+      let results = [];
 
-                matches.push(`${team1} vs ${team2}: ${score1}-${score2} - ${result}`);
-            }
-            
-            // Pokud nebyl nalezen žádný zápas pro daný tým
-            if (totalMatches === 0) {
-                alert("Nebyl nalezen žádný zápas týmu.");
-                return;
-            }
+      for (let line of lines) {
+        const match = line.match(matchRegex);
+        if (!match) continue;
 
-            // Výpočty průměrů
-            const avgGoalsScored = (totalGoalsScored / totalMatches).toFixed(2);
-            const avgGoalsConceded = (totalGoalsConceded / totalMatches).toFixed(2);
+        const team1 = match[1].trim();
+        const team2 = match[2].trim();
+        const score1 = parseInt(match[3]);
+        const score2 = parseInt(match[4]);
+        const result = match[5];
 
-            // Výstup výsledků
-            document.getElementById('result').innerHTML = `
+        let isOurMatch = false;
+        let ourScore = 0;
+        let theirScore = 0;
+
+        if (team1 === team) {
+          isOurMatch = true;
+          ourScore = score1;
+          theirScore = score2;
+        } else if (team2 === team) {
+          isOurMatch = true;
+          ourScore = score2;
+          theirScore = score1;
+        }
+
+        if (isOurMatch) {
+          totalMatches++;
+          scored += ourScore;
+          conceded += theirScore;
+          if (result === "Výhra") wins++;
+          else if (result === "Prohra") losses++;
+          else draws++;
+          results.push(line);
+        }
+      }
+
+      if (totalMatches === 0) {
+        alert("Nebyl nalezen žádný zápas týmu.");
+        return;
+      }
+
+      const avgScored = (scored / totalMatches).toFixed(2);
+      const avgConceded = (conceded / totalMatches).toFixed(2);
+
+      const output = `
 Analyzovaný tým/hráč: ${team}
 
 Celkem zápasů: ${totalMatches}
 Výhry: ${wins}
 Prohry: ${losses}
 Remízy: ${draws}
-Celkový počet vstřelených gólů: ${totalGoalsScored}
-Celkový počet inkasovaných gólů: ${totalGoalsConceded}
-Průměrné vstřelené góly za zápas: ${avgGoalsScored}
-Průměrné inkasované góly za zápas: ${avgGoalsConceded}
+Celkový počet vstřelených gólů: ${scored}
+Celkový počet inkasovaných gólů: ${conceded}
+Průměrné vstřelené góly za zápas: ${avgScored}
+Průměrné inkasované góly za zápas: ${avgConceded}
 
 Seznam zápasů:
-${matches.join('\n')}`;
-        }
+${results.join('\n')}
+      `.trim();
 
-        function copyToClipboard() {
-            const resultText = document.getElementById('result').innerText;
-            if (!resultText) {
-                alert("Nejprve zobrazte výsledky, abyste je mohli zkopírovat.");
-                return;
-            }
-            navigator.clipboard.writeText(resultText).then(() => {
-                alert("Výstup byl zkopírován do schránky!");
-            });
-        }
+      document.getElementById('result').innerText = output;
+    }
 
-        function clearOutput() {
-            document.getElementById('textInput').value = '';
-            document.getElementById('result').innerHTML = '';
-        }
-    </script>
+    function copyToClipboard() {
+      const resultText = document.getElementById('result').innerText;
+      if (!resultText) {
+        alert("Nejprve zobrazte výsledky, abyste je mohli zkopírovat.");
+        return;
+      }
+      navigator.clipboard.writeText(resultText).then(() => {
+        alert("Výstup byl zkopírován do schránky!");
+      });
+    }
+
+    function clearOutput() {
+      document.getElementById('textInput').value = '';
+      document.getElementById('result').innerText = '';
+    }
+  </script>
 </body>
 </html>
