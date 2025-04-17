@@ -76,7 +76,7 @@
         function analyzeMatches() {
             const text = document.getElementById('textInput').value;
             
-            // Získání názvu analyzovaného týmu/háče
+            // Úprava pro hledání jména týmu z formátu "Analyzovaný tým/hráč: Last matches: Mejia N."
             const teamMatch = text.match(/Analyzovaný tým\/hráč: Last matches: ([^\n]+)/);
             if (!teamMatch) {
                 alert("Analyzovaný tým nebyl nalezen.");
@@ -84,8 +84,9 @@
             }
             const team = teamMatch[1].trim();
             
-            // Regulární výraz pro zápasy
-            const regex = new RegExp(`([\\w\\s]+) vs ([\\w\\s]+): (\\d+)-(\\d+) - (Výhra|Prohra|Remíza)`, 'g');
+            // Regulární výraz pro zápasy, který odpovídá formátu:
+            // "Mejia N. vs Hernandez A.: 2-0 - Výhra"
+            const regex = new RegExp(`([^:]+) vs ([^:]+): (\\d+)-(\\d+) - (\\w+)`, 'g');
             
             let totalGoalsScored = 0;
             let totalGoalsConceded = 0;
@@ -94,15 +95,14 @@
             let matches = [];
             let match;
 
-            // Zpracování zápasů
             while (match = regex.exec(text)) {
                 const team1 = match[1].trim();
                 const team2 = match[2].trim();
                 const score1 = parseInt(match[3]);
                 const score2 = parseInt(match[4]);
                 const result = match[5];
-
-                // Pokud zápas obsahuje analyzovaný tým
+                
+                // Pokud zápas patří do analyzovaného týmu
                 if (team1 === team) {
                     totalGoalsScored += score1;
                     totalGoalsConceded += score2;
@@ -118,7 +118,6 @@
                 else if (result === "Prohra") losses++;
                 else draws++;
 
-                // Přidání zápasu do seznamu pro výstup
                 matches.push(`${team1} vs ${team2}: ${score1}-${score2} - ${result}`);
             }
             
@@ -127,61 +126,23 @@
                 return;
             }
 
-            // Výpočty průměrných gólů
             const avgGoalsScored = (totalGoalsScored / totalMatches).toFixed(2);
             const avgGoalsConceded = (totalGoalsConceded / totalMatches).toFixed(2);
 
-            // Hodnocení výkonu týmu
-            const performanceRating = getPerformanceRating(wins, losses, draws, avgGoalsScored, avgGoalsConceded);
-            
-            // Sestavení výsledků pro výstup
             document.getElementById('result').innerHTML = `
-<b>Analyzovaný tým/hráč: ${team}</b>
+Analyzovaný tým/hráč: ${team}
 
-<b>Celkem zápasů: ${totalMatches}</b>
+Celkem zápasů: ${totalMatches}
 Výhry: ${wins}
 Prohry: ${losses}
 Remízy: ${draws}
-
 Celkový počet vstřelených gólů: ${totalGoalsScored}
 Celkový počet inkasovaných gólů: ${totalGoalsConceded}
-
 Průměrné vstřelené góly za zápas: ${avgGoalsScored}
 Průměrné inkasované góly za zápas: ${avgGoalsConceded}
 
-<h3>Seznam zápasů:</h3>
-<pre>${matches.join('\n')}</pre>
-
-<h3>AI Hodnocení výkonu:</h3>
-${performanceRating}
-`;
-        }
-
-        function getPerformanceRating(wins, losses, draws, avgGoalsScored, avgGoalsConceded) {
-            // Základní analytické hodnocení na základě statistik
-            let rating = "";
-            
-            if (wins > losses) {
-                rating += "Tým má pozitivní bilanci, což naznačuje dobrý výkon.\n";
-            } else if (wins < losses) {
-                rating += "Tým má negativní bilanci, což naznačuje slabší výkon.\n";
-            } else {
-                rating += "Tým má vyrovnanou bilanci výher a proher.\n";
-            }
-            
-            if (avgGoalsScored > avgGoalsConceded) {
-                rating += "Tým je ofenzivně silný a dokáže dosahovat více gólů než inkasuje.\n";
-            } else {
-                rating += "Tým má slabší ofenzívu nebo obranu, inkasuje více než skóruje.\n";
-            }
-
-            if (wins / (wins + losses + draws) > 0.5) {
-                rating += "Tým je favoritem díky vysoké úspěšnosti.\n";
-            } else {
-                rating += "Tým potřebuje zlepšit výkon pro dosažení lepších výsledků.\n";
-            }
-
-            return rating;
+Seznam zápasů:
+${matches.join('\n')}`;
         }
 
         function copyToClipboard() {
