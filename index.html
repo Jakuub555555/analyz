@@ -82,11 +82,11 @@
                 alert("Analyzovaný tým nebyl nalezen.");
                 return;
             }
-            const team = teamMatch[1].trim();
+            const team = teamMatch[1].trim();  // Tým (např. "Mejia N.")
             
             // Regulární výraz pro zápasy, který odpovídá formátu:
             // "Mejia N. vs Hernandez A.: 2-0 - Výhra"
-            const regex = new RegExp(`([^:]+) vs ([^:]+): (\\d+)-(\\d+) - (\\w+)`, 'g');
+            const regex = new RegExp(`([A-Za-z ]+) vs ([A-Za-z ]+): (\\d+)-(\\d+) - (Výhra|Prohra|Remíza)`, 'g');
             
             let totalGoalsScored = 0;
             let totalGoalsConceded = 0;
@@ -95,13 +95,14 @@
             let matches = [];
             let match;
 
+            // Projít text a hledat zápasy
             while (match = regex.exec(text)) {
                 const team1 = match[1].trim();
                 const team2 = match[2].trim();
                 const score1 = parseInt(match[3]);
                 const score2 = parseInt(match[4]);
                 const result = match[5];
-                
+
                 // Pokud zápas patří do analyzovaného týmu
                 if (team1 === team) {
                     totalGoalsScored += score1;
@@ -121,14 +122,17 @@
                 matches.push(`${team1} vs ${team2}: ${score1}-${score2} - ${result}`);
             }
             
+            // Pokud nebyl nalezen žádný zápas pro daný tým
             if (totalMatches === 0) {
                 alert("Nebyl nalezen žádný zápas týmu.");
                 return;
             }
 
+            // Výpočty průměrů
             const avgGoalsScored = (totalGoalsScored / totalMatches).toFixed(2);
             const avgGoalsConceded = (totalGoalsConceded / totalMatches).toFixed(2);
 
+            // Výstup výsledků
             document.getElementById('result').innerHTML = `
 Analyzovaný tým/hráč: ${team}
 
