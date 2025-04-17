@@ -117,7 +117,7 @@
                 totalMatches++;
                 if (result === "Výhra") wins++;
                 else if (result === "Prohra") losses++;
-                else draws++;
+                else if (result === "Remíza") draws++;
 
                 matches.push(`${team1} vs ${team2}: ${score1}-${score2} - ${result}`);
             }
