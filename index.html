@@ -75,7 +75,8 @@
     <script>
         function analyzeMatches() {
             const text = document.getElementById('textInput').value;
-            // Změna regulárního výrazu pro hledání týmu
+            
+            // Získání názvu analyzovaného týmu/háče
             const teamMatch = text.match(/Analyzovaný tým\/hráč: Last matches: ([^\n]+)/);
             if (!teamMatch) {
                 alert("Analyzovaný tým nebyl nalezen.");
@@ -101,6 +102,7 @@
                 const score2 = parseInt(match[4]);
                 const result = match[5];
                 
+                // Pokud zápas obsahuje analyzovaný tým
                 if (team1 === team) {
                     totalGoalsScored += score1;
                     totalGoalsConceded += score2;
@@ -116,6 +118,7 @@
                 else if (result === "Prohra") losses++;
                 else draws++;
 
+                // Přidání zápasu do seznamu pro výstup
                 matches.push(`${team1} vs ${team2}: ${score1}-${score2} - ${result}`);
             }
             
@@ -124,23 +127,28 @@
                 return;
             }
 
+            // Výpočty průměrných gólů
             const avgGoalsScored = (totalGoalsScored / totalMatches).toFixed(2);
             const avgGoalsConceded = (totalGoalsConceded / totalMatches).toFixed(2);
 
+            // Sestavení výsledků pro výstup
             document.getElementById('result').innerHTML = `
-Analyzovaný tým/hráč: ${team}
+<b>Analyzovaný tým/hráč: ${team}</b>
 
-Celkem zápasů: ${totalMatches}
+<b>Celkem zápasů: ${totalMatches}</b>
 Výhry: ${wins}
 Prohry: ${losses}
 Remízy: ${draws}
+
 Celkový počet vstřelených gólů: ${totalGoalsScored}
 Celkový počet inkasovaných gólů: ${totalGoalsConceded}
+
 Průměrné vstřelené góly za zápas: ${avgGoalsScored}
 Průměrné inkasované góly za zápas: ${avgGoalsConceded}
 
-Seznam zápasů:
-${matches.join('\n')}`;
+<h3>Seznam zápasů:</h3>
+<pre>${matches.join('\n')}</pre>
+`;
         }
 
         function copyToClipboard() {
