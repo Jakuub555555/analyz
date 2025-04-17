@@ -131,6 +131,9 @@
             const avgGoalsScored = (totalGoalsScored / totalMatches).toFixed(2);
             const avgGoalsConceded = (totalGoalsConceded / totalMatches).toFixed(2);
 
+            // Hodnocení výkonu týmu
+            const performanceRating = getPerformanceRating(wins, losses, draws, avgGoalsScored, avgGoalsConceded);
+            
             // Sestavení výsledků pro výstup
             document.getElementById('result').innerHTML = `
 <b>Analyzovaný tým/hráč: ${team}</b>
@@ -148,7 +151,37 @@ Průměrné inkasované góly za zápas: ${avgGoalsConceded}
 
 <h3>Seznam zápasů:</h3>
 <pre>${matches.join('\n')}</pre>
+
+<h3>AI Hodnocení výkonu:</h3>
+${performanceRating}
 `;
+        }
+
+        function getPerformanceRating(wins, losses, draws, avgGoalsScored, avgGoalsConceded) {
+            // Základní analytické hodnocení na základě statistik
+            let rating = "";
+            
+            if (wins > losses) {
+                rating += "Tým má pozitivní bilanci, což naznačuje dobrý výkon.\n";
+            } else if (wins < losses) {
+                rating += "Tým má negativní bilanci, což naznačuje slabší výkon.\n";
+            } else {
+                rating += "Tým má vyrovnanou bilanci výher a proher.\n";
+            }
+            
+            if (avgGoalsScored > avgGoalsConceded) {
+                rating += "Tým je ofenzivně silný a dokáže dosahovat více gólů než inkasuje.\n";
+            } else {
+                rating += "Tým má slabší ofenzívu nebo obranu, inkasuje více než skóruje.\n";
+            }
+
+            if (wins / (wins + losses + draws) > 0.5) {
+                rating += "Tým je favoritem díky vysoké úspěšnosti.\n";
+            } else {
+                rating += "Tým potřebuje zlepšit výkon pro dosažení lepších výsledků.\n";
+            }
+
+            return rating;
         }
 
         function copyToClipboard() {
