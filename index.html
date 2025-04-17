@@ -75,13 +75,15 @@
     <script>
         function analyzeMatches() {
             const text = document.getElementById('textInput').value;
-            const teamMatch = text.match(/Analyzovaný tým\/hráč: Poslední zápasy: ([^\n]+)/);
+            // Získání názvu analyzovaného týmu/háče
+            const teamMatch = text.match(/Analyzovaný tým\/hráč: Last matches: ([^\n]+)/);
             if (!teamMatch) {
                 alert("Analyzovaný tým nebyl nalezen.");
                 return;
             }
             const team = teamMatch[1].trim();
             
+            // Regulární výraz pro zápasy
             const regex = new RegExp(`([^:]+) vs ([^:]+): (\\d+)-(\\d+) - (\\w+)`, 'g');
             
             let totalGoalsScored = 0;
@@ -91,6 +93,7 @@
             let matches = [];
             let match;
 
+            // Zpracování zápasů
             while (match = regex.exec(text)) {
                 const team1 = match[1].trim();
                 const team2 = match[2].trim();
