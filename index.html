@@ -1,140 +1,96 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Analýza zápasů</title>
+  <meta charset="UTF-8">
+  <title>Analýza Zápasů</title>
   <style>
     body {
-      background-color: #111;
-      color: #fff;
       font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
-    }
-    #analysis_container {
-      background: #222;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      width: 100%;
-      max-width: 800px;
-      text-align: center;
+      margin: 2rem;
+      background-color: #f8f9fa;
     }
     textarea {
-      width: calc(100% - 20px);
-      height: 300px;
-      margin-bottom: 10px;
-      padding: 10px;
-      background: #333;
-      color: #fff;
-      border: 1px solid #444;
-      border-radius: 6px;
-      resize: none;
+      width: 100%;
+      height: 250px;
+      font-family: monospace;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-bottom: 1rem;
     }
     button {
-      margin: 5px;
-      padding: 10px 20px;
-      background: #444;
-      color: #fff;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
       border: none;
-      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
       cursor: pointer;
     }
     button:hover {
-      background: #555;
+      background-color: #0056b3;
     }
-    #result {
-      margin-top: 1rem;
+    pre {
+      background: #fff;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 10px;
       white-space: pre-wrap;
-      text-align: left;
     }
   </style>
 </head>
 <body>
-  <div id="analysis_container">
-    <h1>Analýza zápasů</h1>
-    <textarea id="textInput" placeholder="Vložte text zápasů zde..."></textarea>
-    <div>
-      <button onclick="analyzeMatches()">Analyzovat</button>
-      <button onclick="copyToClipboard()">Kopírovat</button>
-      <button onclick="clearOutput()">Odstranit</button>
-    </div>
-    <div id="result"></div>
-  </div>
+  <h1>Analýza výkonnosti hráče/týmu</h1>
+  <textarea id="input" placeholder="Vložte data ve specifikovaném formátu..."></textarea>
+  <button onclick="analyze()">Analyzovat</button>
+  <h2>Výstup</h2>
+  <pre id="output"></pre>
 
   <script>
-    function analyzeMatches() {
-      const text = document.getElementById('textInput').value;
+    function analyze() {
+      const text = document.getElementById('input').value.trim();
+      const output = document.getElementById('output');
 
-      // Najdi jméno hráče/týmu
-      const teamMatch = text.match(/Analyzovaný tým\/hráč:\s*Last matches:\s*(.+)/);
-      if (!teamMatch) {
-        alert("Analyzovaný tým nebyl nalezen.");
-        return;
-      }
-      const team = teamMatch[1].trim();
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+      const analyzedLine = lines[0];
+      const analyzedName = analyzedLine.split(':')[1].trim();
 
-      // Najdi všechny zápasy
-      const lines = text.split('\n');
-      const matchRegex = /^(.+?) vs (.+?): (\d+)-(\d+) - (Výhra|Prohra|Remíza)$/;
-
-      let totalMatches = 0;
+      const matchLines = lines.slice(2);
       let wins = 0, losses = 0, draws = 0;
       let scored = 0, conceded = 0;
-      let results = [];
 
-      for (let line of lines) {
-        const match = line.match(matchRegex);
-        if (!match) continue;
+      const matches = [];
 
-        const team1 = match[1].trim();
-        const team2 = match[2].trim();
-        const score1 = parseInt(match[3]);
-        const score2 = parseInt(match[4]);
-        const result = match[5];
+      for (const line of matchLines) {
+        const [match, rest] = line.split(':');
+        const [score, result] = rest.trim().split(' - ');
+        const [s1, s2] = score.split('-').map(Number);
 
-        let isOurMatch = false;
-        let ourScore = 0;
-        let theirScore = 0;
+        let team1 = match.split(' vs ')[0].trim();
+        let team2 = match.split(' vs ')[1].trim();
 
-        if (team1 === team) {
-          isOurMatch = true;
-          ourScore = score1;
-          theirScore = score2;
-        } else if (team2 === team) {
-          isOurMatch = true;
-          ourScore = score2;
-          theirScore = score1;
+        if (result === 'Výhra') wins++;
+        else if (result === 'Prohra') losses++;
+        else draws++;
+
+        if (team1 === analyzedName) {
+          scored += s1;
+          conceded += s2;
+        } else {
+          scored += s2;
+          conceded += s1;
         }
 
-        if (isOurMatch) {
-          totalMatches++;
-          scored += ourScore;
-          conceded += theirScore;
-          if (result === "Výhra") wins++;
-          else if (result === "Prohra") losses++;
-          else draws++;
-          results.push(line);
-        }
+        matches.push(`${team1} vs ${team2}: ${s1}-${s2} - ${result}`);
       }
 
-      if (totalMatches === 0) {
-        alert("Nebyl nalezen žádný zápas týmu.");
-        return;
-      }
+      const total = matchLines.length;
+      const avgScored = (scored / total).toFixed(2);
+      const avgConceded = (conceded / total).toFixed(2);
 
-      const avgScored = (scored / totalMatches).toFixed(2);
-      const avgConceded = (conceded / totalMatches).toFixed(2);
+      const resultText = `Analyzovaný tým/hráč: ${analyzedName}
 
-      const output = `
-Analyzovaný tým/hráč: ${team}
-
-Celkem zápasů: ${totalMatches}
+Celkem zápasů: ${total}
 Výhry: ${wins}
 Prohry: ${losses}
 Remízy: ${draws}
@@ -144,26 +100,9 @@ Průměrné vstřelené góly za zápas: ${avgScored}
 Průměrné inkasované góly za zápas: ${avgConceded}
 
 Seznam zápasů:
-${results.join('\n')}
-      `.trim();
+${matches.join('\n')}`;
 
-      document.getElementById('result').innerText = output;
-    }
-
-    function copyToClipboard() {
-      const resultText = document.getElementById('result').innerText;
-      if (!resultText) {
-        alert("Nejprve zobrazte výsledky, abyste je mohli zkopírovat.");
-        return;
-      }
-      navigator.clipboard.writeText(resultText).then(() => {
-        alert("Výstup byl zkopírován do schránky!");
-      });
-    }
-
-    function clearOutput() {
-      document.getElementById('textInput').value = '';
-      document.getElementById('result').innerText = '';
+      output.textContent = resultText;
     }
   </script>
 </body>
