@@ -75,7 +75,7 @@
     <script>
         function analyzeMatches() {
             const text = document.getElementById('textInput').value;
-            // Získání názvu analyzovaného týmu/háče
+            // Změna regulárního výrazu pro hledání týmu
             const teamMatch = text.match(/Analyzovaný tým\/hráč: Last matches: ([^\n]+)/);
             if (!teamMatch) {
                 alert("Analyzovaný tým nebyl nalezen.");
