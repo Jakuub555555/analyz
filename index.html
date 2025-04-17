@@ -85,7 +85,7 @@
             const team = teamMatch[1].trim();
             
             // Regulární výraz pro zápasy
-            const regex = new RegExp(`([^:]+) vs ([^:]+): (\\d+)-(\\d+) - (\\w+)`, 'g');
+            const regex = new RegExp(`([\\w\\s]+) vs ([\\w\\s]+): (\\d+)-(\\d+) - (Výhra|Prohra|Remíza)`, 'g');
             
             let totalGoalsScored = 0;
             let totalGoalsConceded = 0;
