@@ -75,8 +75,8 @@
     <script>
         function analyzeMatches() {
             const text = document.getElementById('textInput').value;
-            
-            // Úprava pro hledání jména týmu z formátu "Analyzovaný tým/hráč: Last matches: Mejia N."
+
+            // Hledáme analyzovaný tým z formátu "Analyzovaný tým/hráč: Last matches: Mejia N."
             const teamMatch = text.match(/Analyzovaný tým\/hráč: Last matches: ([^\n]+)/);
             if (!teamMatch) {
                 alert("Analyzovaný tým nebyl nalezen.");
@@ -84,8 +84,8 @@
             }
             const team = teamMatch[1].trim();  // Tým (např. "Mejia N.")
             
-            // Regulární výraz pro zápasy, který odpovídá formátu:
-            // "Mejia N. vs Hernandez A.: 2-0 - Výhra"
+            // Regulární výraz pro zápasy
+            // Tento výraz teď bude odpovídat formátu: "Mejia N. vs Hernandez A.: 2-0 - Výhra"
             const regex = new RegExp(`([A-Za-z ]+) vs ([A-Za-z ]+): (\\d+)-(\\d+) - (Výhra|Prohra|Remíza)`, 'g');
             
             let totalGoalsScored = 0;
