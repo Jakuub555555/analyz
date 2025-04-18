@@ -3,77 +3,120 @@
 <head>
   <meta charset="UTF-8">
   <title>Analýza Zápasů</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 2rem;
-      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    #container {
+      width: 100%;
+      max-width: 800px;
+      background: #222;
+      border-radius: 10px;
+      padding: 2rem;
+      box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
+      text-align: center;
     }
     textarea {
-      width: 100%;
+      width: calc(100% - 20px);
       height: 250px;
       font-family: monospace;
       padding: 1rem;
-      border: 1px solid #ccc;
+      border: 1px solid #444;
       border-radius: 10px;
+      margin-bottom: 1rem;
+      background: #333;
+      color: #fff;
+      resize: none;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
       margin-bottom: 1rem;
     }
     button {
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      border: none;
-      background-color: #007bff;
-      color: white;
-      border-radius: 5px;
+      padding: 10px 20px;
+      font-size: 14px;
       cursor: pointer;
+      background: #444;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
     }
     button:hover {
-      background-color: #0056b3;
+      background: #555;
     }
     pre {
-      background: #fff;
-      padding: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 10px;
+      background: transparent;
+      padding: 10px;
+      border: none;
+      color: #fff;
       white-space: pre-wrap;
+      text-align: left;
     }
   </style>
 </head>
 <body>
-  <h1>Analýza výkonnosti hráče/týmu</h1>
-  <textarea id="input" placeholder="Vložte data ve specifikovaném formátu..."></textarea>
-  <button onclick="analyze()">Analyzovat</button>
-  <h2>Výstup</h2>
-  <pre id="output"></pre>
+  <div id="container">
+    <h1>Analýza výkonnosti hráče/týmu</h1>
+    <textarea id="input" placeholder="Např. Last matches: Rennes&#10;...zápasy..."></textarea>
+    <div class="button-container">
+      <button onclick="analyze()">Analyzovat</button>
+      <button onclick="copyToClipboard()">Kopírovat</button>
+      <button onclick="clearOutput()">Odstranit</button>
+    </div>
+    <!-- Tady NENÍ žádný nadpis "Výstup", odstraněno! -->
+    <pre id="output"></pre>
+  </div>
 
   <script>
+    let lastOutput = '';
+
     function analyze() {
       const text = document.getElementById('input').value.trim();
       const output = document.getElementById('output');
 
       const lines = text.split('\n').filter(line => line.trim() !== '');
-      const analyzedLine = lines[0];
-      const analyzedName = analyzedLine.split(':')[1].trim();
+      if (lines.length < 3) {
+        output.textContent = 'Zadejte prosím název analyzovaného týmu/hráče a alespoň jeden zápas.';
+        return;
+      }
+
+      const firstLine = lines[0];
+      const analyzedName = firstLine.toLowerCase().includes('analyzovaný tým') ? firstLine.trim() : `Analyzovaný tým/hráč: ${firstLine.trim()}`;
 
       const matchLines = lines.slice(2);
       let wins = 0, losses = 0, draws = 0;
       let scored = 0, conceded = 0;
-
       const matches = [];
 
       for (const line of matchLines) {
         const [match, rest] = line.split(':');
+        if (!rest) continue;
+
         const [score, result] = rest.trim().split(' - ');
         const [s1, s2] = score.split('-').map(Number);
 
         let team1 = match.split(' vs ')[0].trim();
         let team2 = match.split(' vs ')[1].trim();
 
+        let isAnalyzedTeamFirst = analyzedName.includes(team1);
+
         if (result === 'Výhra') wins++;
         else if (result === 'Prohra') losses++;
         else draws++;
 
-        if (team1 === analyzedName) {
+        if (isAnalyzedTeamFirst) {
           scored += s1;
           conceded += s2;
         } else {
@@ -81,14 +124,15 @@
           conceded += s1;
         }
 
-        matches.push(`${team1} vs ${team2}: ${s1}-${s2} - ${result}`);
+        const matchDisplay = `${team1} vs ${team2}: ${s1}-${s2} - ${result}`;
+        matches.push(matchDisplay);
       }
 
       const total = matchLines.length;
-      const avgScored = (scored / total).toFixed(2);
-      const avgConceded = (conceded / total).toFixed(2);
+      const avgScored = (scored / total || 0).toFixed(2);
+      const avgConceded = (conceded / total || 0).toFixed(2);
 
-      const resultText = `Analyzovaný tým/hráč: ${analyzedName}
+      lastOutput = `${analyzedName}
 
 Celkem zápasů: ${total}
 Výhry: ${wins}
@@ -102,7 +146,27 @@ Průměrné inkasované góly za zápas: ${avgConceded}
 Seznam zápasů:
 ${matches.join('\n')}`;
 
-      output.textContent = resultText;
+      output.textContent = lastOutput;
+    }
+
+    function copyToClipboard() {
+      if (lastOutput) {
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = lastOutput;
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextArea);
+        alert('Výstup byl zkopírován do schránky!');
+      } else {
+        alert('Nejprve proveďte analýzu, abyste ji mohli zkopírovat.');
+      }
+    }
+
+    function clearOutput() {
+      document.getElementById('input').value = '';
+      document.getElementById('output').textContent = '';
+      lastOutput = '';
     }
   </script>
 </body>
