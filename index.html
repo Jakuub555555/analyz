@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Analýza Zápasů</title>
-<link rel="icon" href="https://i.imgur.com/BrmPqfP.png">
+  <link rel="icon" href="https://i.imgur.com/BrmPqfP.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -70,13 +70,12 @@
 <body>
   <div id="container">
     <h1>Analýza výkonnosti hráče/týmu</h1>
-    <textarea id="input" placeholder="Např. Last matches: Rennes&#10;...zápasy..."></textarea>
+    <textarea id="input" placeholder="Analyzovaný tým/hráč: Last matches: Egypt&#10;Celkový počet zápasů: 10&#10;&#10;Egypt vs South Africa: 1-0 - Výhra (26.12.25 18:00)&#10;..."></textarea>
     <div class="button-container">
       <button onclick="analyze()">Analyzovat</button>
       <button onclick="copyToClipboard()">Kopírovat</button>
       <button onclick="clearOutput()">Odstranit</button>
     </div>
-    <!-- Tady NENÍ žádný nadpis "Výstup", odstraněno! -->
     <pre id="output"></pre>
   </div>
 
@@ -87,34 +86,67 @@
       const text = document.getElementById('input').value.trim();
       const output = document.getElementById('output');
 
-      const lines = text.split('\n').filter(line => line.trim() !== '');
+      const lines = text.split('\n').map(l => l.trim()).filter(line => line !== '');
       if (lines.length < 3) {
-        output.textContent = 'Zadejte prosím název analyzovaného týmu/hráče a alespoň jeden zápas.';
+        output.textContent = 'Zadejte prosím analyzovaný tým/hráče a alespoň jeden zápas.';
         return;
       }
 
+      // 1. řádek – analyzovaný tým/hráč (ponecháme, jak to máš v prvním nástroji)
       const firstLine = lines[0];
-      const analyzedName = firstLine.toLowerCase().includes('analyzovaný tým') ? firstLine.trim() : `Analyzovaný tým/hráč: ${firstLine.trim()}`;
+      const analyzedName = firstLine.toLowerCase().includes('analyzovaný tým')
+        ? firstLine.trim()
+        : `Analyzovaný tým/hráč: ${firstLine.trim()}`;
 
+      // Zápasy začínají obvykle po prázdném řádku, ale tvůj formát:
+      // ř.1: Analyzovaný tým/hráč: ...
+      // ř.2: Celkový počet zápasů: X
+      // ř.3: (prázdný) – ve filtru už jsme prázdné řádky vyhodili
+      // takže zápasy = od indexu 2 dál
       const matchLines = lines.slice(2);
+
       let wins = 0, losses = 0, draws = 0;
       let scored = 0, conceded = 0;
       const matches = [];
 
       for (const line of matchLines) {
+        // Očekávaný formát:
+        // Egypt vs South Africa: 1-0 - Výhra (26.12.25 18:00)
         const [match, rest] = line.split(':');
         if (!rest) continue;
 
-        const [score, result] = rest.trim().split(' - ');
-        const [s1, s2] = score.split('-').map(Number);
+        // rest = " 1-0 - Výhra (26.12.25 18:00)"
+        const parts = rest.trim().split(' - ');
+        if (parts.length < 2) continue;
 
-        let team1 = match.split(' vs ')[0].trim();
-        let team2 = match.split(' vs ')[1].trim();
+        const scorePart = parts[0].trim();             // "1-0"
+        const resultPartRaw = parts.slice(1).join(' - ').trim(); // "Výhra (26.12.25 18:00)" nebo "Výhra"
 
-        let isAnalyzedTeamFirst = analyzedName.includes(team1);
+        // vytáhnout případné datum/čas v závorkách
+        let dateTime = '';
+        let resultClean = resultPartRaw;
 
-        if (result === 'Výhra') wins++;
-        else if (result === 'Prohra') losses++;
+        const dtMatch = resultPartRaw.match(/\(([^)]+)\)/);
+        if (dtMatch) {
+          dateTime = dtMatch[1].trim(); // "26.12.25 18:00"
+          resultClean = resultPartRaw.replace(/\(([^)]+)\)/, '').trim(); // "Výhra"
+        }
+
+        const [s1, s2] = scorePart.split('-').map(Number);
+        if (isNaN(s1) || isNaN(s2)) continue;
+
+        // tým1 / tým2
+        const vsSplit = match.split(' vs ');
+        if (vsSplit.length < 2) continue;
+        let team1 = vsSplit[0].trim();
+        let team2 = vsSplit[1].trim();
+
+        // odhad, jestli analyzovaný tým je první
+        const isAnalyzedTeamFirst = analyzedName.toLowerCase().includes(team1.toLowerCase());
+
+        // statistiky podle výsledku
+        if (resultClean === 'Výhra') wins++;
+        else if (resultClean === 'Prohra') losses++;
         else draws++;
 
         if (isAnalyzedTeamFirst) {
@@ -125,13 +157,15 @@
           conceded += s1;
         }
 
-        const matchDisplay = `${team1} vs ${team2}: ${s1}-${s2} - ${result}`;
+        const matchDisplay =
+          `${team1} vs ${team2}: ${s1}-${s2} - ${resultClean}` +
+          (dateTime ? ` (${dateTime})` : '');
         matches.push(matchDisplay);
       }
 
-      const total = matchLines.length;
-      const avgScored = (scored / total || 0).toFixed(2);
-      const avgConceded = (conceded / total || 0).toFixed(2);
+      const total = matches.length;
+      const avgScored = (total ? scored / total : 0).toFixed(2);
+      const avgConceded = (total ? conceded / total : 0).toFixed(2);
 
       lastOutput = `${analyzedName}
 
